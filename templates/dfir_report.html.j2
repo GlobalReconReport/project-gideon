@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFIR Intelligence Report — {{ case_name }}</title>
+<style>
+/* ── Reset & base ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 13px; }
+body { font-family: 'Segoe UI', 'Liberation Sans', sans-serif;
+       background: #0d1117; color: #c9d1d9; line-height: 1.5; }
+a { color: #58a6ff; }
+code { font-family: 'Courier New', monospace; font-size: 0.9em;
+       background: #161b22; padding: 1px 4px; border-radius: 3px; }
+pre { background: #161b22; padding: 0.8em; border-radius: 6px;
+      overflow-x: auto; font-size: 0.85em; white-space: pre-wrap; word-break: break-all; }
+
+/* ── Report header ────────────────────────────────────────────────────── */
+#report-header {
+  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+  border-bottom: 3px solid #30363d; padding: 2.5rem 3rem 2rem;
+}
+#report-header .classification {
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.2em;
+  color: #f85149; text-transform: uppercase; margin-bottom: 0.5rem;
+}
+#report-header h1 { font-size: 1.8rem; color: #e6edf3; font-weight: 300;
+                    letter-spacing: 0.05em; }
+#report-header h1 span { color: #58a6ff; font-weight: 700; }
+.meta-grid { display: grid; grid-template-columns: repeat(3, 1fr);
+             gap: 1.5rem; margin-top: 1.5rem; }
+.meta-item label { font-size: 0.7rem; text-transform: uppercase;
+                   letter-spacing: 0.1em; color: #8b949e; display: block; }
+.meta-item span { color: #e6edf3; font-size: 0.9rem; }
+
+/* ── Section layout ───────────────────────────────────────────────────── */
+.section { padding: 2rem 3rem; border-bottom: 1px solid #21262d; }
+.section h2 { font-size: 1.1rem; font-weight: 600; color: #e6edf3;
+              border-left: 3px solid #58a6ff; padding-left: 0.8rem;
+              margin-bottom: 1.2rem; letter-spacing: 0.03em; }
+.section h3 { font-size: 0.95rem; color: #8b949e; margin: 1rem 0 0.5rem;
+              text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* ── Severity badges ──────────────────────────────────────────────────── */
+.badge {
+  display: inline-block; padding: 1px 8px; border-radius: 12px;
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.sev-critical { background: #3d1a1a; color: #f85149; border: 1px solid #f85149; }
+.sev-high     { background: #2d1f0e; color: #e3a057; border: 1px solid #e3a057; }
+.sev-medium   { background: #2a2500; color: #d2a02a; border: 1px solid #d2a02a; }
+.sev-low      { background: #0d2419; color: #3fb950; border: 1px solid #3fb950; }
+.sev-info     { background: #161b22; color: #8b949e; border: 1px solid #30363d; }
+
+/* ── Severity summary cards ───────────────────────────────────────────── */
+.sev-cards { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.sev-card {
+  flex: 1; min-width: 100px; text-align: center;
+  background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1rem;
+}
+.sev-card .count { font-size: 2rem; font-weight: 700; }
+.sev-card .label { font-size: 0.7rem; text-transform: uppercase; color: #8b949e; }
+.sev-card.critical .count { color: #f85149; }
+.sev-card.high     .count { color: #e3a057; }
+.sev-card.medium   .count { color: #d2a02a; }
+.sev-card.low      .count { color: #3fb950; }
+.sev-card.info     .count { color: #8b949e; }
+
+/* ── Tables ───────────────────────────────────────────────────────────── */
+.tbl-wrap { overflow-x: auto; margin-bottom: 1rem; }
+table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
+thead th { background: #161b22; color: #8b949e; font-weight: 600;
+           padding: 0.5rem 0.7rem; text-align: left; border-bottom: 2px solid #30363d;
+           white-space: nowrap; }
+tbody tr { border-bottom: 1px solid #21262d; }
+tbody tr:hover { background: #161b22; }
+tbody td { padding: 0.4rem 0.7rem; vertical-align: top; word-break: break-word; max-width: 450px; }
+
+/* Row severity colouring */
+tr.row-critical td:first-child { border-left: 3px solid #f85149; }
+tr.row-high     td:first-child { border-left: 3px solid #e3a057; }
+tr.row-medium   td:first-child { border-left: 3px solid #d2a02a; }
+tr.row-low      td:first-child { border-left: 3px solid #3fb950; }
+
+/* ── Collapsible panels ───────────────────────────────────────────────── */
+details { background: #161b22; border: 1px solid #30363d;
+          border-radius: 6px; margin-bottom: 0.6rem; }
+details summary {
+  padding: 0.6rem 1rem; cursor: pointer; font-weight: 600;
+  color: #c9d1d9; list-style: none; display: flex;
+  justify-content: space-between; align-items: center;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::after { content: "▼"; font-size: 0.7em; color: #58a6ff; }
+details[open] summary::after { content: "▲"; }
+details .panel-body { padding: 0.8rem 1rem; border-top: 1px solid #30363d; }
+
+/* ── Executive summary box ────────────────────────────────────────────── */
+.exec-box {
+  background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+  padding: 1.2rem 1.5rem;
+}
+.exec-box ul { padding-left: 1.4rem; }
+.exec-box li { margin: 0.4rem 0; color: #c9d1d9; }
+
+/* ── Evidence hash table ──────────────────────────────────────────────── */
+.hash-row td:nth-child(3),
+.hash-row td:nth-child(4) { font-family: monospace; font-size: 0.78rem; color: #58a6ff; }
+
+/* ── Timeline search ──────────────────────────────────────────────────── */
+#tl-search { background: #161b22; border: 1px solid #30363d; color: #c9d1d9;
+             padding: 0.4rem 0.8rem; border-radius: 6px; width: 320px;
+             margin-bottom: 0.8rem; font-size: 0.85rem; }
+
+/* ── Footer ───────────────────────────────────────────────────────────── */
+#report-footer {
+  text-align: center; padding: 1.5rem; font-size: 0.75rem; color: #8b949e;
+  border-top: 1px solid #21262d;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ Header ════════════════════════════════════════════════════════════════ -->
+<div id="report-header">
+  <div class="classification">// DFIR Intelligence Report // Sensitive — Examiner Use Only //</div>
+  <h1>Digital Forensic Investigation: <span>{{ case_name }}</span></h1>
+  <div class="meta-grid">
+    <div class="meta-item"><label>Examiner</label><span>{{ examiner }}</span></div>
+    <div class="meta-item"><label>Case Opened</label><span>{{ created_at[:19] }} UTC</span></div>
+    <div class="meta-item"><label>Report Generated</label><span>{{ generated_at[:19] }} UTC</span></div>
+  </div>
+</div>
+
+<!-- ══ Severity Summary ══════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2>Severity Overview</h2>
+  <div class="sev-cards">
+    <div class="sev-card critical"><div class="count">{{ sev_counts.critical }}</div><div class="label">Critical</div></div>
+    <div class="sev-card high"><div class="count">{{ sev_counts.high }}</div><div class="label">High</div></div>
+    <div class="sev-card medium"><div class="count">{{ sev_counts.medium }}</div><div class="label">Medium</div></div>
+    <div class="sev-card low"><div class="count">{{ sev_counts.low }}</div><div class="label">Low</div></div>
+    <div class="sev-card info"><div class="count">{{ sev_counts.info }}</div><div class="label">Info</div></div>
+  </div>
+</div>
+
+<!-- ══ Executive Summary ═════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2>Executive Summary</h2>
+  <div class="exec-box">
+    <ul>
+      {% for bullet in exec_bullets %}<li>{{ bullet }}</li>{% endfor %}
+    </ul>
+  </div>
+</div>
+
+<!-- ══ Evidence & Chain of Custody ══════════════════════════════════════════ -->
+<div class="section">
+  <h2>Evidence Inventory &amp; Chain of Custody</h2>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th>File</th><th>Type</th><th>SHA-256</th><th>MD5</th>
+        <th>Size (bytes)</th><th>Magic</th><th>Acquired</th>
+      </tr></thead>
+      <tbody>
+        {% for ev in evidence %}
+        <tr class="hash-row">
+          <td><code>{{ ev.path | truncate_str(50) }}</code></td>
+          <td>{{ ev.type }}</td>
+          <td><code>{{ ev.sha256 }}</code></td>
+          <td><code>{{ ev.md5 }}</code></td>
+          <td>{{ "{:,}".format(ev.size) }}</td>
+          <td>{{ ev.magic }}</td>
+          <td>{{ ev.acquired_at[:19] }}</td>
+        </tr>
+        {% else %}<tr><td colspan="7">No evidence recorded.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <details>
+    <summary>Chain of Custody Log ({{ coc|length }} entries)</summary>
+    <div class="panel-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Timestamp</th><th>Action</th><th>Description</th></tr></thead>
+          <tbody>
+            {% for entry in coc %}
+            <tr>
+              <td>{{ entry.timestamp[:19] }}</td>
+              <td><code>{{ entry.action }}</code></td>
+              <td>{{ entry.description | truncate_str(120) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+</div>
+
+<!-- ══ Cross-Source Correlations ════════════════════════════════════════════ -->
+{% if correlations %}
+<div class="section">
+  <h2>Cross-Source Correlations</h2>
+  {% for corr in correlations %}
+  <details {% if corr.severity in ('critical','high') %}open{% endif %}>
+    <summary>
+      <span>{{ corr.title }}</span>
+      <span class="badge {{ corr.severity | severity_class }}">{{ corr.severity }}</span>
+    </summary>
+    <div class="panel-body">
+      <p style="margin-bottom:0.6rem;">{{ corr.description }}</p>
+      <p><strong>Sources:</strong> {{ corr.sources | join(', ') }} &nbsp;|&nbsp;
+         <strong>Category:</strong> {{ corr.category }}</p>
+      {% if corr.evidence %}
+      <h3>Supporting Evidence</h3>
+      <ul style="padding-left:1.4rem;">
+        {% for e in corr.evidence[:15] %}<li><code>{{ e }}</code></li>{% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </details>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- ══ IOCs ══════════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2>Indicators of Compromise
+    <small style="font-weight:normal;font-size:0.8rem;color:#8b949e;">
+      (showing top {{ iocs|length }} of {{ ioc_total }} unique IOCs)
+    </small>
+  </h2>
+  {% if ioc_by_type %}
+  <p style="margin-bottom:0.8rem;">
+    {% for t, c in ioc_by_type.items() %}
+    <span class="badge sev-info" style="margin-right:4px;">{{ t }}: {{ c }}</span>
+    {% endfor %}
+  </p>
+  {% endif %}
+  <div class="tbl-wrap">
+    <table id="ioc-table">
+      <thead><tr><th>Severity</th><th>Type</th><th>Value</th><th>Source</th><th>Context</th></tr></thead>
+      <tbody>
+        {% for ioc in iocs %}
+        <tr class="row-{{ ioc.severity }}">
+          <td><span class="badge {{ ioc.severity | severity_class }}">{{ ioc.severity }}</span></td>
+          <td>{{ ioc.type }}</td>
+          <td><code>{{ ioc.value | truncate_str(80) }}</code></td>
+          <td>{{ ioc.source }}</td>
+          <td>{{ ioc.context | truncate_str(80) }}</td>
+        </tr>
+        {% else %}<tr><td colspan="5">No IOCs recorded.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ Timeline ══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <h2>Forensic Timeline
+    <small style="font-weight:normal;font-size:0.8rem;color:#8b949e;">
+      (showing top {{ timeline_events|length }} of {{ timeline_total }} events)
+    </small>
+  </h2>
+  <input id="tl-search" type="text" placeholder="Filter timeline…" oninput="filterTimeline(this.value)">
+  <div class="tbl-wrap">
+    <table id="tl-table">
+      <thead><tr>
+        <th>Timestamp</th><th>Severity</th><th>Source</th>
+        <th>Plugin</th><th>Event Type</th><th>Description</th><th>Artifact</th>
+      </tr></thead>
+      <tbody>
+        {% for ev in timeline_events %}
+        <tr class="row-{{ ev.severity }}">
+          <td style="white-space:nowrap;">{{ ev.timestamp[:19] }}</td>
+          <td><span class="badge {{ ev.severity | severity_class }}">{{ ev.severity }}</span></td>
+          <td>{{ ev.source }}</td>
+          <td><code>{{ ev.plugin }}</code></td>
+          <td>{{ ev.event_type }}</td>
+          <td>{{ ev.description | truncate_str(100) }}</td>
+          <td><code>{{ ev.artifact | truncate_str(40) }}</code></td>
+        </tr>
+        {% else %}<tr><td colspan="7">No timeline events.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ Memory Analysis ═══════════════════════════════════════════════════════ -->
+{% if memory %}
+<div class="section">
+  <h2>Memory Analysis <small style="font-size:0.8rem;color:#8b949e;">(Volatility 3)</small></h2>
+  <p style="margin-bottom:1rem;">OS Profile: <strong>{{ memory.os_profile }}</strong> |
+     Processes: <strong>{{ memory.process_count }}</strong> |
+     Network connections: <strong>{{ memory.net_conns|length }}</strong> |
+     Malfind regions: <strong>{{ memory.malfind_count }}</strong></p>
+
+  {% if memory.suspicious %}
+  <h3>⚠ Suspicious Processes ({{ memory.suspicious|length }})</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Severity</th><th>Process</th><th>PID</th><th>Reason</th></tr></thead>
+      <tbody>
+        {% for p in memory.suspicious %}
+        <tr class="row-{{ p.severity }}">
+          <td><span class="badge {{ p.severity | severity_class }}">{{ p.severity }}</span></td>
+          <td><code>{{ p.ImageFileName or p.Process or '?' }}</code></td>
+          <td>{{ p.PID or '' }}</td>
+          <td>{{ p.reason | truncate_str(100) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if memory.malfind %}
+  <details>
+    <summary>Malfind — Injected Memory Regions ({{ memory.malfind_count }})</summary>
+    <div class="panel-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>PID</th><th>Process</th><th>Start VPN</th><th>Protection</th></tr></thead>
+          <tbody>
+            {% for r in memory.malfind %}
+            <tr class="row-critical">
+              <td>{{ r.PID }}</td>
+              <td><code>{{ r.Process }}</code></td>
+              <td><code>{{ r.StartVPN }}</code></td>
+              <td>{{ r.Protection }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+  {% endif %}
+
+  <details>
+    <summary>Process List ({{ memory.process_count }})</summary>
+    <div class="panel-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            {% if memory.processes %}
+            <tr>{% for k in memory.processes[0].keys() | list %}{% if loop.index0 < 8 %}<th>{{ k }}</th>{% endif %}{% endfor %}</tr>
+            {% else %}
+            <tr><th>No process data</th></tr>
+            {% endif %}
+          </thead>
+          <tbody>
+            {% for p in memory.processes %}
+            <tr>
+              {% for v in p.values() | list %}{% if loop.index0 < 8 %}
+              <td>{{ v | truncate_str(40) }}</td>
+              {% endif %}{% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+
+  {% if memory.net_conns %}
+  <details>
+    <summary>Network Connections ({{ memory.net_conns|length }})</summary>
+    <div class="panel-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Local</th><th>Remote</th><th>State</th><th>Owner</th></tr></thead>
+          <tbody>
+            {% for c in memory.net_conns %}
+            <tr>
+              <td><code>{{ (c.LocalAddr or c.get('LocalAddress','')) | truncate_str(30) }}</code></td>
+              <td><code>{{ (c.ForeignAddr or c.get('RemoteAddress','')) | truncate_str(30) }}</code></td>
+              <td>{{ c.State or '' }}</td>
+              <td>{{ c.Owner or c.get('Process','') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+  {% endif %}
+
+  {% if memory.cmdlines %}
+  <details>
+    <summary>Command Lines ({{ memory.cmdlines|length }})</summary>
+    <div class="panel-body">
+      {% for c in memory.cmdlines %}
+      <pre>{{ c.get('Process','?') }} (PID {{ c.get('PID','?') }}): {{ c.get('Args','') | truncate_str(300) }}</pre>
+      {% endfor %}
+    </div>
+  </details>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- ══ Network Analysis ══════════════════════════════════════════════════════ -->
+{% if network %}
+<div class="section">
+  <h2>Network Analysis <small style="font-size:0.8rem;color:#8b949e;">(tshark / bulk_extractor)</small></h2>
+  <p style="margin-bottom:1rem;">
+    Packets: <strong>{{ "{:,}".format(network.packet_count) }}</strong> |
+    Duration: <strong>{{ "%.1f"|format(network.duration_sec) }}s</strong> |
+    Unique IPs: <strong>{{ network.unique_ips|length }}</strong> |
+    DNS queries: <strong>{{ network.dns_queries|length }}</strong>
+  </p>
+
+  {% if network.suspicious %}
+  <h3>⚠ Suspicious Traffic ({{ network.suspicious|length }})</h3>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Severity</th><th>Type</th><th>Detail</th></tr></thead>
+      <tbody>
+        {% for s in network.suspicious %}
+        <tr class="row-{{ s.severity }}">
+          <td><span class="badge {{ s.severity | severity_class }}">{{ s.severity }}</span></td>
+          <td>{{ s.type }}</td>
+          <td>{{ s.detail | truncate_str(120) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <details>
+    <summary>DNS Queries ({{ network.dns_queries|length }})</summary>
+    <div class="panel-body">
+      {% for q in network.dns_queries %}<code>{{ q }}</code><br>{% endfor %}
+    </div>
+  </details>
+
+  {% if network.http_requests %}
+  <details>
+    <summary>HTTP Requests ({{ network.http_requests|length }})</summary>
+    <div class="panel-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Method</th><th>Host</th><th>URI</th><th>User-Agent</th></tr></thead>
+          <tbody>
+            {% for r in network.http_requests %}
+            <tr>
+              <td><strong>{{ r.method }}</strong></td>
+              <td><code>{{ r.host }}</code></td>
+              <td><code>{{ r.uri | truncate_str(80) }}</code></td>
+              <td>{{ r.user_agent | truncate_str(60) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+  {% endif %}
+
+  <details>
+    <summary>Top TCP Conversations ({{ network.top_tcp_conns|length }})</summary>
+    <div class="panel-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Source</th><th>Destination</th><th>Total Frames</th><th>Total Bytes</th></tr></thead>
+          <tbody>
+            {% for c in network.top_tcp_conns %}
+            <tr>
+              <td><code>{{ c.src }}</code></td>
+              <td><code>{{ c.dst }}</code></td>
+              <td>{{ c.total_frames }}</td>
+              <td>{{ c.total_bytes }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+</div>
+{% endif %}
+
+<!-- ══ Disk Analysis ═════════════════════════════════════════════════════════ -->
+{% if disk %}
+<div class="section">
+  <h2>Disk Analysis <small style="font-size:0.8rem;color:#8b949e;">(SleuthKit / bulk_extractor / Plaso)</small></h2>
+  <p style="margin-bottom:1rem;">
+    Partitions: <strong>{{ disk.partitions|length }}</strong> |
+    Filesystem entries: <strong>{{ "{:,}".format(disk.file_count) }}</strong>
+  </p>
+
+  {% if disk.partitions %}
+  <details>
+    <summary>Partition Table</summary>
+    <div class="panel-body">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Slot</th><th>Start</th><th>End</th><th>Length</th><th>Description</th></tr></thead>
+          <tbody>
+            {% for p in disk.partitions %}
+            <tr><td>{{ p.slot }}</td><td>{{ p.start }}</td><td>{{ p.end }}</td>
+                <td>{{ p.length }}</td><td>{{ p.desc }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+  {% endif %}
+
+  {% if disk.bulk_summary %}
+  <details>
+    <summary>bulk_extractor Feature Summary</summary>
+    <div class="panel-body">
+      <table style="width:auto;">
+        <thead><tr><th>Feature Type</th><th>Count</th></tr></thead>
+        <tbody>
+          {% for k, v in disk.bulk_summary.items() %}
+          <tr><td>{{ k }}</td><td><strong>{{ v }}</strong></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+  {% endif %}
+
+  {% if disk.timeline_path %}
+  <p style="margin-top:0.8rem;color:#8b949e;">
+    Full Plaso timeline: <code>{{ disk.timeline_path }}</code>
+  </p>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- ══ Footer ════════════════════════════════════════════════════════════════ -->
+<div id="report-footer">
+  DFIR Triage Toolkit &nbsp;|&nbsp; Case: {{ case_name }} &nbsp;|&nbsp;
+  Examiner: {{ examiner }} &nbsp;|&nbsp;
+  Generated: {{ generated_at[:19] }} UTC &nbsp;|&nbsp;
+  <em>This report contains sensitive forensic data — handle per your organisation's evidence policy.</em>
+</div>
+
+<script>
+// ── Timeline live filter ────────────────────────────────────────────────────
+function filterTimeline(q) {
+  q = q.toLowerCase();
+  const rows = document.querySelectorAll('#tl-table tbody tr');
+  rows.forEach(function(r) {
+    r.style.display = (q === '' || r.textContent.toLowerCase().includes(q)) ? '' : 'none';
+  });
+}
+
+// ── Sort table by column click ──────────────────────────────────────────────
+document.querySelectorAll('table thead th').forEach(function(th) {
+  th.style.cursor = 'pointer';
+  th.title = 'Click to sort';
+  th.addEventListener('click', function() {
+    const tbl = th.closest('table');
+    const idx = Array.from(th.parentElement.children).indexOf(th);
+    const rows = Array.from(tbl.querySelectorAll('tbody tr'));
+    const asc  = th.dataset.sort !== 'asc';
+    th.dataset.sort = asc ? 'asc' : 'desc';
+    rows.sort(function(a, b) {
+      const av = (a.cells[idx] || {}).textContent || '';
+      const bv = (b.cells[idx] || {}).textContent || '';
+      return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+    const tbody = tbl.querySelector('tbody');
+    rows.forEach(function(r) { tbody.appendChild(r); });
+  });
+});
+</script>
+</body>
+</html>

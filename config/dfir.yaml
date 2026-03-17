@@ -1,0 +1,74 @@
+# DFIR Triage Toolkit - Configuration
+# Adjust tool paths if binaries are not on $PATH
+
+tools:
+  volatility: "vol"               # Volatility 3 CLI
+  log2timeline: "log2timeline.py" # Plaso log2timeline
+  psort: "psort.py"               # Plaso psort
+  bulk_extractor: "bulk_extractor"
+  tshark: "tshark"
+  mmls: "mmls"                    # SleuthKit (Autopsy backend)
+  fls: "fls"                      # SleuthKit file listing
+  tsk_recover: "tsk_recover"      # SleuthKit file recovery
+  yara: "yara"
+  wkhtmltopdf: "wkhtmltopdf"      # PDF generation
+  weasyprint: "weasyprint"        # PDF generation fallback
+
+analysis:
+  # Volatility3 plugins to run (tried in order; skipped if unavailable)
+  volatility_plugins_windows:
+    - "windows.pslist"
+    - "windows.pstree"
+    - "windows.cmdline"
+    - "windows.netscan"
+    - "windows.netstat"
+    - "windows.malfind"
+    - "windows.dlllist"
+    - "windows.filescan"
+    - "windows.handles"
+    - "windows.registry.hivelist"
+    - "windows.registry.printkey"
+    - "windows.dumpfiles"
+    - "windows.hashdump"
+    - "windows.lsadump"
+
+  volatility_plugins_linux:
+    - "linux.pslist"
+    - "linux.pstree"
+    - "linux.bash"
+    - "linux.netstat"
+    - "linux.malfind"
+    - "linux.lsof"
+    - "linux.mountinfo"
+    - "linux.keyboard_notifiers"
+
+  # bulk_extractor scanners to enable (empty = all)
+  bulk_extractor_scanners: []
+
+  # Timeline: maximum events to include in HTML report table
+  timeline_report_limit: 5000
+
+  # Minimum severity to include in executive summary
+  # Values: critical, high, medium, low, info
+  min_report_severity: "low"
+
+  # YARA scan timeout per file (seconds)
+  yara_timeout: 60
+
+  # Process execution timeout (seconds) per tool invocation
+  tool_timeout: 3600
+
+output:
+  # Include raw Volatility output in report
+  include_raw_output: false
+  # Embed base64 screenshots in HTML report (future)
+  embed_screenshots: false
+
+forensics:
+  # Hash algorithms to compute for every piece of evidence
+  hash_algorithms:
+    - "md5"
+    - "sha1"
+    - "sha256"
+  # Block size for hashing large files
+  hash_block_size: 65536

@@ -1,0 +1,29 @@
+# Project Gideon — Python dependencies
+# Install: pip3 install -r requirements.txt
+
+# ── Core (both tools) ────────────────────────────────────────────────────────
+PyYAML>=6.0          # config.yaml parsing (shared/config_loader.py)
+jinja2>=3.1.0        # HTML report templating (blueteam/reporting/reporter.py)
+
+# ── Red Team (redteam/pentest_lab.py) ────────────────────────────────────────
+requests>=2.28.0     # HTTP client for Burp/ZAP API
+urllib3>=1.26.0      # SSL warning suppression
+pymetasploit3        # Metasploit RPC client (optional — imported at runtime)
+python-nmap          # python-nmap wrapper (optional — falls back to subprocess)
+
+# ── Blue Team (blueteam/) ────────────────────────────────────────────────────
+weasyprint>=60.0     # PDF generation (optional — falls back to wkhtmltopdf)
+
+# ── System tools required (install via apt on Kali) ──────────────────────────
+#   volatility3        → apt install volatility3
+#   plaso              → apt install plaso   (log2timeline.py + psort.py)
+#   bulk-extractor     → apt install bulk-extractor
+#   tshark             → apt install tshark
+#   sleuthkit          → apt install sleuthkit  (mmls, fls, tsk_recover)
+#   yara               → apt install yara
+#   wkhtmltopdf        → apt install wkhtmltopdf
+#   autopsy            → apt install autopsy    (GUI frontend; SleuthKit is the backend)
+#   subfinder          → apt install subfinder
+#   nuclei             → apt install nuclei
+#   gowitness          → apt install gowitness
+#   nmap               → apt install nmap

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Gideon Report — 127.0.0.1</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: "Segoe UI", Arial, sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 24px; }
+    h1 { color: #f0c040; margin-bottom: 4px; }
+    h2 { color: #5dade2; margin: 32px 0 12px; border-bottom: 1px solid #333; padding-bottom: 6px; }
+    .meta { color: #888; font-size: 0.9em; margin-bottom: 24px; }
+    .cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+    .card { background: #16213e; border-radius: 8px; padding: 16px 24px; min-width: 110px; text-align: center; }
+    .card .num { font-size: 2em; font-weight: bold; color: #f0c040; }
+    .card .lbl { font-size: 0.8em; color: #888; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+    th { background: #16213e; color: #5dade2; text-align: left; padding: 10px 12px; }
+    td { padding: 8px 12px; border-bottom: 1px solid #222; vertical-align: top; word-break: break-word; }
+    tr:hover td { background: #1e2a45; }
+  </style>
+</head>
+<body>
+  <h1>Project Gideon — Pentest Report</h1>
+  <div class="meta">
+    Target: <strong>127.0.0.1</strong> &nbsp;|&nbsp;
+    Started: 2026-03-16T22:43:28.490092+00:00 &nbsp;|&nbsp;
+    Finished: 2026-03-16T22:43:53.275127+00:00
+  </div>
+  <div class="cards">
+    <div class="card"><div class="num">1</div><div class="lbl">Hosts</div></div>
+    <div class="card"><div class="num">1</div><div class="lbl">Services</div></div>
+    <div class="card"><div class="num">0</div><div class="lbl">Findings</div></div>
+  </div>
+  <div style="margin-bottom:24px"></div>
+
+  <h2>Hosts</h2>
+  <table>
+    <thead><tr><th>IP</th><th>Hostname</th><th>OS</th><th>Services</th></tr></thead>
+    <tbody><tr><td>127.0.0.1</td><td>localhost</td><td>—</td><td style='font-size:0.85em'>3000/tcp (ppp)</td></tr></tbody>
+  </table>
+
+  <h2>Findings</h2>
+  <table>
+    <thead><tr><th>Severity</th><th>Name</th><th>Host</th><th>Port</th><th>Description</th><th>Source</th></tr></thead>
+    <tbody><tr><td colspan='6'>No findings.</td></tr></tbody>
+  </table>
+</body>
+</html>

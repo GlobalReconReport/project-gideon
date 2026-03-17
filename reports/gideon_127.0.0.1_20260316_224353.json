@@ -1,0 +1,20 @@
+{
+  "target": "127.0.0.1",
+  "started_at": "2026-03-16T22:43:28.490092+00:00",
+  "finished_at": "2026-03-16T22:43:53.274992+00:00",
+  "hosts": [
+    {
+      "ip": "127.0.0.1",
+      "hostname": "localhost",
+      "os": "",
+      "services": [
+        {
+          "port": 3000,
+          "protocol": "tcp",
+          "name": "ppp"
+        }
+      ]
+    }
+  ],
+  "findings": []
+}
